@@ -43,7 +43,7 @@ exports.resize = async (req, res, next) => {
 exports.createStore = async (req, res) => {
     const store = await (new Store(req.body)).save();
     req.flash('success', `Successfully Created ${store.name}.Care to leave a review ? `);
-    res.redirect(`/ store / ${store.slug} `);
+    res.redirect(`/store/${store.slug}`);
 };
 
 exports.getStores = async (req, res) => {
@@ -68,7 +68,7 @@ exports.updateStore = async (req, res) => {
         { new: true, runValidators: true }
     ).exec();
     req.flash('success', `Successfully Updated ${store.name}.<a href='/stores/${store.slug}'>View Store</a>`);
-    res.redirect(`/ store / ${store._id} /edit`);
+    res.redirect(`/store/${store._id}/edit`);
 };
 
 exports.getStoreBySlug = async (req, res, next) => {
