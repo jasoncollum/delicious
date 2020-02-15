@@ -43,7 +43,7 @@ exports.resize = async (req, res, next) => {
 exports.createStore = async (req, res) => {
     const store = await (new Store(req.body)).save();
     req.flash('success', `Successfully Created ${store.name}.Care to leave a review ? `);
-    res.redirect(`/ store / ${store.slug} `);
+    res.redirect(`/store/${store.slug}`);
 };
 
 exports.getStores = async (req, res) => {
@@ -68,11 +68,20 @@ exports.updateStore = async (req, res) => {
         { new: true, runValidators: true }
     ).exec();
     req.flash('success', `Successfully Updated ${store.name}.<a href='/stores/${store.slug}'>View Store</a>`);
-    res.redirect(`/ store / ${store._id} /edit`);
+    res.redirect(`/store/${store._id}/edit`);
 };
 
 exports.getStoreBySlug = async (req, res, next) => {
     const store = await Store.findOne({ slug: req.params.slug });
     if (!store) return next();
     res.render('store', { store, title: store.name });
+};
+
+exports.getStoresByTag = async (req, res) => {
+    const tag = req.params.tag;  // current tag selection
+    const tagQuery = tag || { $exists: true }; // if no tag, any store with a tag property
+    const tagsPromise = Store.getTagsList();  // custom method we create in Store.js
+    const storesPromise = Store.find({ tags: tagQuery }); // find when tags array includes tag
+    const [tags, stores] = await Promise.all([tagsPromise, storesPromise]);
+    res.render('tag', { tags, title: 'Tags', tag, stores });
 };
