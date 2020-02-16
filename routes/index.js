@@ -41,4 +41,8 @@ router.post('/register',
 // Log out
 router.get('/logout', authController.logout);
 
+// Account
+router.get('/account', authController.isLoggedIn, userController.account);
+router.post('/account', catchErrors(userController.updateAccount));
+
 module.exports = router;
