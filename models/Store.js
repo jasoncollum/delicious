@@ -46,6 +46,7 @@ storeSchema.index({
     description: 'text'
 });
 
+// -----
 storeSchema.pre('save', async function (next) {
     if (!this.isModified('name')) {
         next();
