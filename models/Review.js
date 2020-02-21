@@ -27,4 +27,13 @@ const reviewSchema = new mongoose.Schema({
     }
 });
 
+function autopopulate(next) {
+    this.populate('author');
+    next();
+}
+
+// Hooks to autopopulate the autor fields when find or findOne are run
+reviewSchema.pre('find', autopopulate);
+reviewSchema.pre('findOne', autopopulate);
+
 module.exports = mongoose.model('Review', reviewSchema);
