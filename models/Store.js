@@ -38,6 +38,10 @@ const storeSchema = new mongoose.Schema({
         ref: 'User',
         required: 'You must supply an author'
     }
+}, {
+    toJSON: { virtuals: true }, // virtuals only populate to JSON or Objects if marked true
+    toObject: { virtuals: true }
+
 });
 
 // Define our indexes
@@ -71,5 +75,56 @@ storeSchema.statics.getTagsList = function () {
         { $sort: { count: -1 } }
     ]);
 }
+
+storeSchema.statics.getTopStores = function () {
+    return this.aggregate([
+        // Look up stores and populate their reviews (merge the review docs with store doc)... MongoDB will take the model name Review, lowercase it and add an s to make it plural = that's where <from: 'reviews'> comes from
+        {
+            $lookup: {
+                from: 'reviews', // what model to link
+                localField: '_id', // which field on the store
+                foreignField: 'store', // which field on the review
+                as: 'reviews' // naming the new field 'reviews'
+            }
+        },
+        // Filter for only items with 2 or more reviews
+        // Match documents WHERE the 2nd item in reviews exists
+        {
+            $match: { 'reviews.1': { $exists: true } }
+        },
+        // Add the average reviews field
+        // Create a new field called averageRating, then set it's value to the average of each review's rating field
+        {
+            $project: {  // replace $project with $addField and photo, name, reviews auto add ???
+                photo: '$$ROOT.photo', // add store name, photo, reviews, slug
+                name: '$$ROOT.name',
+                reviews: '$$ROOT.reviews',
+                slug: '$$ROOT.slug',
+                averageRating: { $avg: '$reviews.rating' } // $ means a field from added data 
+            }
+        },
+        // Sort it - heighest reviews first
+        { $sort: { averageRating: - 1 } },
+        // limit to at most 10
+        { $limit: 10 }
+    ])
+}
+
+// Find reviews where the stores _id property === reviews store property (similar to a Join)
+// *** Not avaibable to use in aggregate method in getTopStores above ***
+storeSchema.virtual('reviews', {
+    ref: 'Review',  // what model to link
+    localField: '_id',  // which field on the store
+    foreignField: 'store' // which field on the review
+});
+
+// autopopulate / add reviews to stores
+function autopopulate(next) {
+    this.populate('reviews');
+    next();
+}
+
+storeSchema.pre('find', autopopulate);
+storeSchema.pre('findOne', autopopulate);
 
 module.exports = mongoose.model('Store', storeSchema);
